@@ -1,2 +1,2 @@
 # MyTelegramBot
-Telegram Bot using asp net core
+Telegram Bot using asp .net core
