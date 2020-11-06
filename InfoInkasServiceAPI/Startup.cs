@@ -10,7 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Core;
+using Serilog.Sinks.Elasticsearch;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
@@ -32,6 +36,7 @@ namespace InfoInkasService.InfoInkasServiceAPI
 
             services.AddSingleton<IBotService, BotService>();
             services.AddSingleton<ISpamControlService, SpamControlService>();
+            services.AddSingleton<ILogger>(CreateLoggerConfiguration());
             services.AddScoped<IEmailService, EmailService>();
 #if DEBUG
             services.AddScoped<IDBControl, /*DBImmitation*/OracleControl>();
@@ -65,6 +70,26 @@ namespace InfoInkasService.InfoInkasServiceAPI
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private Logger CreateLoggerConfiguration()
+        {
+#if DEBUG
+            return new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
+#else
+            return new LoggerConfiguration()
+                    .Enrich.FromLogContext()
+                    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(Configuration["ElasticConfiguration:Uri"]))
+                    {
+                        AutoRegisterTemplate = true,
+                        IndexFormat = $"{Assembly.GetExecutingAssembly().GetName().Name.ToLower()}-{DateTime.UtcNow:yyyy-MM}"
+                    })
+                    .Enrich.WithProperty("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+                    .ReadFrom.Configuration(Configuration).CreateLogger();
+#endif
         }
     }
 }

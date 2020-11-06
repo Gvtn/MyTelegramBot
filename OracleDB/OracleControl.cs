@@ -2,8 +2,8 @@
 using InfoInkasService.Core.Exceptions;
 using InfoInkasService.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NLog;
 using System;
 using System.Xml;
 
@@ -16,10 +16,11 @@ namespace InfoInkasService.OracleDB
 
         public DbContext OraContext { get { return _ora; } }
 
-        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger _logger ;
 
-        public OracleControl(IOptions<OraConfig> oraConfig)
+        public OracleControl(IOptions<OraConfig> oraConfig, ILogger<OracleControl> logger)
         {
+            _logger = logger;
             _ora = new OracleDbContext(oraConfig.Value.ConnectionStringZukus);
         }
 
@@ -53,6 +54,7 @@ namespace InfoInkasService.OracleDB
             }
             catch (Exception e)
             {
+                _logger.LogError(e.StackTrace);
                 throw e.ToInternalErrorException("Ошибка запроса в БД");
             }
         }
