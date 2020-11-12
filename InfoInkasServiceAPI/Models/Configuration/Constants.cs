@@ -12,5 +12,7 @@ namespace InfoInkasServiceAPI.Models.Configuration
         public const string RemoveWebHoook = "removewebhook";
         public const string GetWebHook = "getwebhook";
         public const string SendEmail = "sendemail";
+        public const string QRStart = "<qrcode>";
+        public const string QREnd = "</qrcode>";
     }
 }

@@ -1,6 +1,10 @@
-﻿using InfoInkasService.Core.DataModels;
+﻿using Core.DataModels;
+using Core.Tools;
+using DinkToPdf.Contracts;
+using InfoInkasService.Core.DataModels;
 using InfoInkasService.Core.Interfaces;
 using InfoInkasService.Core.Tools;
+using InfoInkasServiceAPI.Models.Configuration;
 using InfoInkasServiceAPI.Services;
 using Microsoft.Extensions.Logging;
 using Serilog.Extensions.Logging;
@@ -24,9 +28,13 @@ namespace InfoInkasService.InfoInkasServiceAPI.Models.Commands
 
         private ILogger _logger = new SerilogLoggerProvider(Serilog.Log.Logger).CreateLogger(nameof(ProcessInvoceRequestCommand));
         private readonly ISpamControlService _spamControlSrvice;
-        public ProcessInvoceRequestCommand(ISpamControlService spamControlSrvice)
+        private readonly IConverter _converter;
+        private readonly IQRService _qrService;
+        public ProcessInvoceRequestCommand(ISpamControlService spamControlSrvice, IConverter converter, IQRService qrService)
         {
             _spamControlSrvice = spamControlSrvice;
+            _converter = converter;
+            _qrService = qrService;
         }
         public override bool Contains(Message message)
         {
@@ -126,11 +134,29 @@ namespace InfoInkasService.InfoInkasServiceAPI.Models.Commands
 
                 StringBuilder combinedData = new StringBuilder();
 
+                List<string> qrList = new List<string>();
+
                 foreach (var item in desRes.CashOutInfo)
                 {
                     combinedData.Append(item.CashOutData);
                     combinedData.AppendLine();
                     combinedData.AppendLine();
+                    qrList.Add(item.CashOutData.GetSubstring(Constants.QRStart, Constants.QREnd));
+                }
+
+                int i = 0;
+                string fileName = string.Empty;
+
+                foreach (var item in qrList)
+                {
+                    i++;
+                    fileName = $"IBoxInkas{i}.pdf";
+                    emailData.Attachments.Add(new PDFFile()
+                    {
+                        FileName = fileName,
+                        ContentType = "application/pdf",
+                        Content = PDFTools.GeneratePDF(_converter, GetHtmlQR(item), fileName)
+                    });
                 }
 
                 emailData.CashOutData = combinedData.ToString();
@@ -154,6 +180,12 @@ namespace InfoInkasService.InfoInkasServiceAPI.Models.Commands
                 await client.SendTextMessageAsync(chatId, "error", replyToMessageId: message.MessageId);
                 _logger.LogDebug("Не удалось отправить письмо");
             }
+        }
+
+
+        public string GetHtmlQR(string qrString)
+        {
+            return $"<html><head></head><body><img src=\"{ String.Format("data:image/png;base64, {0}", Convert.ToBase64String(_qrService.GetQRBytes(qrString)))}\"/></body></html>";
         }
     }
 }

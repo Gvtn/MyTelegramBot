@@ -67,26 +67,18 @@ namespace InfoInkasServiceAPI.Services
             emailMessage.From.Add(MailboxAddress.Parse(data.EmailSender));
             emailMessage.To.Add(MailboxAddress.Parse(data.EmailRecipient));
             emailMessage.Subject = data.Subject;
-            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html)
+            var builder = new BodyBuilder();
+
+            if (data.Attachments != null)
             {
-                Text = data.CashOutData
-            };
-            //if (mailRequest.Attachments != null)
-            //{
-            //    byte[] fileBytes;
-            //    foreach (var file in mailRequest.Attachments)
-            //    {
-            //        if (file.Length > 0)
-            //        {
-            //            using (var ms = new MemoryStream())
-            //            {
-            //                file.CopyTo(ms);
-            //                fileBytes = ms.ToArray();
-            //            }
-            //            builder.Attachments.Add(file.FileName, fileBytes, ContentType.Parse(file.ContentType));
-            //        }
-            //    }
-            //}
+                foreach (var file in data.Attachments)
+                {
+                    builder.Attachments.Add(file.FileName, file.Content, ContentType.Parse(file.ContentType));
+                }
+            }
+
+            builder.HtmlBody = data.CashOutData;
+            emailMessage.Body = builder.ToMessageBody();
 
             return emailMessage;
         }

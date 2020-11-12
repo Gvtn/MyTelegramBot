@@ -1,3 +1,4 @@
+using DinkToPdf.Contracts;
 using InfoInkasService.InfoInkasServiceAPI.Models.Commands;
 using InfoInkasService.InfoInkasServiceAPI.Models.Connfiguration;
 using InfoInkasService.InfoInkasServiceAPI.Models.Services;
@@ -22,7 +23,7 @@ namespace InfoInkasService.InfoInkasServiceAPI.Models.Services
         public TelegramBotClient Client { get; }
         public string WebHookUrl { get; private set; }
 
-        public BotService(IConfiguration config, ISpamControlService spamControlService)
+        public BotService(IConfiguration config, ISpamControlService spamControlService, IConverter converter, IQRService qrService)
         {
             _config = config;
             _botConfig = new BotConfigurationOptions();
@@ -40,7 +41,7 @@ namespace InfoInkasService.InfoInkasServiceAPI.Models.Services
                     _botConfig.BotToken,
                     new HttpToSocks5Proxy(_botConfig.Socks5Host, _botConfig.Socks5Port));
             commandsList = new List<Command>();
-            commandsList.Add(new ProcessInvoceRequestCommand(spamControlService));
+            commandsList.Add(new ProcessInvoceRequestCommand(spamControlService, converter, qrService));
 
             Task t = Task.Run(async () => await Client.SetWebhookAsync($"{_config.GetValue<string>("UrlForWebHook")}/{Constants.UpdatePath}"));
             t.Wait();

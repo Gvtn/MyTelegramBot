@@ -1,5 +1,7 @@
-﻿using InfoInkasService.Core.Interfaces;
+﻿using Core.Interfaces;
+using InfoInkasService.Core.Interfaces;
 using System;
+using System.Collections.Generic;
 
 namespace InfoInkasService.Core.DataModels
 {
@@ -9,5 +11,12 @@ namespace InfoInkasService.Core.DataModels
         public string EmailSender { get; set; }
         public string Subject { get; set; }
         public string CashOutData { get; set; }
+
+        public List<IFile> Attachments { get; }
+
+        public EmailData()
+        {
+            Attachments = new List<IFile>();
+        }
     }
 }

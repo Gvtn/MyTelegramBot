@@ -14,7 +14,7 @@ namespace InfoInkasService.Core.DataModels
         [XmlElement(ElementName = "error")]
         public string Error { get; set; }
 
-        public class CashOutInfoResult : IEmailData
+        public class CashOutInfoResult
         {
             [XmlElement(ElementName = "email_recipient")]
             public string EmailRecipient { get; set; }
